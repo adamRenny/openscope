@@ -1,4 +1,5 @@
 import ava from 'ava';
+import sinon from 'sinon';
 
 import TimeKeeper from '../../src/assets/scripts/client/engine/TimeKeeper';
 import TimeMath from '../../src/assets/scripts/client/engine/TimeMath';
@@ -94,4 +95,38 @@ ava(`${name}#elapsedFrames is 0 at construction time`, t => {
     const timer = new TimeKeeper();
 
     t.is(timer.elapsedFrames, 0, 'Expected the elapsed frames to be 0 at creation time');
+});
+
+ava(`${name}#update should increment the elapsedFrames`, t => {
+    const timer = new TimeKeeper();
+    const previousElapsedFrames = timer.elapsedFrames;
+    timer.update(123);
+
+    t.is(timer.elapsedFrames, previousElapsedFrames + 1, 'Expected the elapsed frames to be updated');
+
+    const numberToIncrementBy = 5;
+    for (let i = 0; i < 5; i++) {
+        timer.update(123);
+    }
+
+    t.is(
+        timer.elapsedFrames,
+        previousElapsedFrames + 1 + numberToIncrementBy,
+        'Expected the elapsed frames to be updated'
+    );
+});
+
+ava(`${name}#step should call update with the delta in time`, t => {
+    const originalGetCurrentTimestamp = TimeMath.getCurrentTimestamp;
+    const initialTimestamp = 0;
+    const nextTimestamp = 45;
+    TimeMath.getCurrentTimestamp = () => initialTimestamp;
+    const timer = new TimeKeeper();
+    TimeMath.getCurrentTimestamp = () => nextTimestamp;
+    timer.update = sinon.spy();
+    timer.step();
+
+    t.true(timer.update.calledWith(nextTimestamp), 'Expected the update to be called with the delta');
+
+    TimeMath.getCurrentTimestamp = originalGetCurrentTimestamp;
 });
